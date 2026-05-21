@@ -1,0 +1,215 @@
+:root {
+  color: #17201c;
+  background: #f4f3ee;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 1px solid #c9c7bb;
+  border-radius: 8px;
+  background: #fffdfa;
+  color: #18211d;
+  cursor: pointer;
+  font-weight: 700;
+  min-width: 42px;
+  min-height: 36px;
+  padding: 0 12px;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+button:hover {
+  background: #eaf5ee;
+  border-color: #6c9a7d;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+.app-shell {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 14px;
+  min-height: 100vh;
+  padding: 22px;
+}
+
+.toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ghost-button {
+  margin-left: auto;
+}
+
+.editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  min-height: 0;
+}
+
+.pane {
+  background: #fffdfa;
+  border: 1px solid #d7d4c8;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pane-title {
+  align-items: center;
+  background: #ece9df;
+  border-bottom: 1px solid #d7d4c8;
+  color: #526059;
+  display: flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  min-height: 38px;
+  padding: 0 14px;
+  text-transform: uppercase;
+}
+
+textarea {
+  background: #fffdfa;
+  border: 0;
+  color: #17201c;
+  flex: 1;
+  line-height: 1.65;
+  min-height: 460px;
+  outline: 0;
+  padding: 18px;
+  resize: none;
+  tab-size: 2;
+}
+
+.preview-pane {
+  min-width: 0;
+}
+
+.markdown-preview {
+  flex: 1;
+  min-height: 460px;
+  overflow: auto;
+  padding: 10px 24px 32px;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3 {
+  color: #14251d;
+  line-height: 1.18;
+  margin: 1.2em 0 0.45em;
+}
+
+.markdown-preview h1 {
+  font-size: 2rem;
+}
+
+.markdown-preview h2 {
+  border-bottom: 1px solid #ddd8ca;
+  font-size: 1.45rem;
+  padding-bottom: 0.25em;
+}
+
+.markdown-preview h3 {
+  font-size: 1.15rem;
+}
+
+.markdown-preview p,
+.markdown-preview li,
+.markdown-preview blockquote {
+  color: #26322d;
+}
+
+.markdown-preview a {
+  color: #1f6f8b;
+  font-weight: 700;
+}
+
+.markdown-preview ul {
+  padding-left: 1.25rem;
+}
+
+.markdown-preview li + li {
+  margin-top: 0.3rem;
+}
+
+.markdown-preview blockquote {
+  border-left: 4px solid #6c9a7d;
+  background: #eef5f0;
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+}
+
+.markdown-preview pre {
+  background: #15211c;
+  border-radius: 8px;
+  color: #eef8f2;
+  overflow: auto;
+  padding: 16px;
+}
+
+.markdown-preview code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.92em;
+}
+
+.inline-code {
+  background: #ebe7d9;
+  border-radius: 6px;
+  color: #634821;
+  padding: 0.12rem 0.34rem;
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    padding: 14px;
+  }
+
+  .ghost-button {
+    margin-left: 0;
+  }
+
+  .editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  textarea,
+  .markdown-preview {
+    min-height: 360px;
+  }
+}

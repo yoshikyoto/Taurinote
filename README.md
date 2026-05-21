@@ -1,0 +1,30 @@
+# Tauri + React + Typescript
+
+## install reust
+
+参考: https://qiita.com/maoutokagura/items/c2fd85132bcec399c3a1xz
+
+```bash
+brew install rustup-init
+rustup-init
+
+# シェルを再起動するか、
+source "$HOME/.cargo/env"
+```
+
+## pnpm
+
+pnpm をインストールしてください
+
+```bash
+pnpm install
+
+# For Desktop development, run:
+  pnpm tauri dev
+
+# For Android development, run:
+  pnpm tauri android dev
+
+# For iOS development, run:
+  pnpm tauri ios dev
+```
