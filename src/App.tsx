@@ -10,6 +10,7 @@ import {
 } from "@mantine/core";
 import { FileIcon } from "@phosphor-icons/react/dist/csr/File";
 import { FolderIcon } from "@phosphor-icons/react/dist/csr/Folder";
+import { FolderOpenIcon } from "@phosphor-icons/react/dist/csr/FolderOpen";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -35,13 +36,16 @@ function toTreeNode(node: DirectoryNode): TreeNodeData {
 
 function DirectoryTreeNode({
   node,
+  expanded,
   elementProps,
 }: RenderTreeNodePayload) {
   const isDirectory = node.nodeProps?.kind === "directory";
 
   return (
     <Group gap={6} wrap="nowrap" title={node.value} {...elementProps}>
-      {isDirectory ? (
+      {isDirectory && expanded ? (
+        <FolderOpenIcon aria-hidden color="#55715f" size={17} />
+      ) : isDirectory ? (
         <FolderIcon aria-hidden color="#55715f" size={17} />
       ) : (
         <FileIcon aria-hidden color="#6b736e" size={16} />
