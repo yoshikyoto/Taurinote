@@ -1,4 +1,4 @@
-# UI Library and Styling Notes
+# UI ライブラリとスタイリングの検討
 
 Taurinote の UI 実装方針を検討したときの比較メモです。
 
