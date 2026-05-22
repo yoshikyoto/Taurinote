@@ -16,7 +16,9 @@ import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
 import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+const OPEN_DIRECTORY_PATHS_STORAGE_KEY = "openDirectoryPaths";
 
 type DirectoryNode = {
   name: string;
@@ -28,6 +30,35 @@ type DirectoryNode = {
 type DirectoryTreeNodeProps = RenderTreeNodePayload & {
   onCloseRootDirectory: (path: string) => void;
 };
+
+function loadOpenDirectoryPaths() {
+  try {
+    const savedPaths = JSON.parse(
+      localStorage.getItem(OPEN_DIRECTORY_PATHS_STORAGE_KEY) ?? "[]",
+    );
+
+    if (!Array.isArray(savedPaths)) return [];
+
+    return [...new Set(savedPaths.filter((path) => typeof path === "string"))];
+  } catch {
+    return [];
+  }
+}
+
+function saveOpenDirectoryPaths(directoryTrees: DirectoryNode[]) {
+  try {
+    localStorage.setItem(
+      OPEN_DIRECTORY_PATHS_STORAGE_KEY,
+      JSON.stringify(directoryTrees.map((tree) => tree.path)),
+    );
+  } catch {
+    return;
+  }
+}
+
+function readDirectoryTree(path: string) {
+  return invoke<DirectoryNode>("read_directory_tree", { path });
+}
 
 function toTreeNode(node: DirectoryNode): TreeNodeData {
   return {
@@ -92,11 +123,55 @@ function DirectoryTreeNode({
 function Menu() {
   const [directoryTrees, setDirectoryTrees] = useState<DirectoryNode[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const treeData = useMemo(
     () => directoryTrees.map(toTreeNode),
     [directoryTrees],
   );
+
+  useEffect(() => {
+    const savedPaths = loadOpenDirectoryPaths();
+    if (savedPaths.length === 0) {
+      setIsInitialized(true);
+      return;
+    }
+
+    let isCancelled = false;
+    setIsLoading(true);
+
+    void Promise.allSettled(savedPaths.map(readDirectoryTree)).then(
+      (results) => {
+        if (isCancelled) return;
+
+        const restoredTrees: DirectoryNode[] = [];
+        const restoreErrors: string[] = [];
+
+        results.forEach((result) => {
+          if (result.status === "fulfilled") {
+            restoredTrees.push(result.value);
+          } else {
+            restoreErrors.push(String(result.reason));
+          }
+        });
+
+        setDirectoryTrees(restoredTrees);
+        setError(restoreErrors[0] ?? null);
+        setIsInitialized(true);
+        setIsLoading(false);
+      },
+    );
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isInitialized) {
+      saveOpenDirectoryPaths(directoryTrees);
+    }
+  }, [directoryTrees, isInitialized]);
 
   async function addDirectory() {
     const selectedPath = await open({
@@ -109,9 +184,7 @@ function Menu() {
     setIsLoading(true);
     setError(null);
     try {
-      const nextTree = await invoke<DirectoryNode>("read_directory_tree", {
-        path: selectedPath,
-      });
+      const nextTree = await readDirectoryTree(selectedPath);
       setDirectoryTrees((currentTrees) => {
         const existingTreeIndex = currentTrees.findIndex(
           (tree) => tree.path === nextTree.path,
