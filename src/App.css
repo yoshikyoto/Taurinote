@@ -1,4 +1,9 @@
 :root {
+  color: #17201c;
+  background: #f4f3ee;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -20,6 +25,96 @@ body {
   margin: 0;
 }
 
-.app-shell {
-  min-height: 100vh;
+button {
+  font: inherit;
+}
+
+.sidebar {
+  background: #fffdfa;
+  border-right: 1px solid #d7d4c8;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sidebar-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 8px 16px;
+}
+
+.tree-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 18px;
+}
+
+.tree-root {
+  padding-left: 0;
+}
+
+.tree-item {
+  color: #25312c;
+  font-size: 0.82rem;
+  line-height: 1.3;
+  min-width: 0;
+}
+
+.tree-file,
+.tree-directory summary {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  min-height: 24px;
+  padding: 2px 5px;
+}
+
+.tree-directory summary {
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.tree-directory summary:hover {
+  background: #f1f5ef;
+}
+
+.tree-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-icon {
+  color: #55715f;
+  flex: 0 0 auto;
+}
+
+.file-icon {
+  color: #6b736e;
+}
+
+.directory-error {
+  color: #a33c35;
+  font-size: 0.78rem;
+  margin: 8px;
+  overflow-wrap: anywhere;
+}
+
+.add-directory-button {
+  background: #fffdfa;
+  border-top: 1px solid #d7d4c8;
+  color: #18211d;
+  font-weight: 700;
+  min-height: 42px;
+  padding: 0 14px;
+}
+
+.add-directory-button:hover {
+  background: #eaf5ee;
+}
+
+.workspace {
+  background: #f4f3ee;
+  min-width: 0;
 }

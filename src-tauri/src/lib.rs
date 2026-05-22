@@ -1,14 +1,77 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+use serde::Serialize;
+use std::{fs, path::Path};
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DirectoryNode {
+    name: String,
+    path: String,
+    kind: String,
+    children: Vec<DirectoryNode>,
+}
+
+fn build_directory_node(path: &Path) -> Result<DirectoryNode, String> {
+    let metadata = fs::metadata(path).map_err(|error| error.to_string())?;
+    if !metadata.is_dir() {
+        return Err("The selected path is not a directory.".to_string());
+    }
+
+    let mut children = fs::read_dir(path)
+        .map_err(|error| error.to_string())?
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| {
+            let file_type = entry.file_type().ok()?;
+            let entry_path = entry.path();
+
+            if file_type.is_dir() {
+                return build_directory_node(&entry_path).ok();
+            }
+
+            if file_type.is_file() {
+                return Some(DirectoryNode {
+                    name: node_name(&entry_path),
+                    path: entry_path.to_string_lossy().into_owned(),
+                    kind: "file".to_string(),
+                    children: Vec::new(),
+                });
+            }
+
+            None
+        })
+        .collect::<Vec<_>>();
+
+    children.sort_by(|left, right| {
+        left.kind
+            .cmp(&right.kind)
+            .then_with(|| left.name.to_lowercase().cmp(&right.name.to_lowercase()))
+    });
+
+    Ok(DirectoryNode {
+        name: node_name(path),
+        path: path.to_string_lossy().into_owned(),
+        kind: "directory".to_string(),
+        children,
+    })
+}
+
+fn node_name(path: &Path) -> String {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .map(str::to_owned)
+        .unwrap_or_else(|| path.to_string_lossy().into_owned())
+}
+
 #[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+fn read_directory_tree(path: String) -> Result<DirectoryNode, String> {
+    build_directory_node(Path::new(&path))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![read_directory_tree])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
