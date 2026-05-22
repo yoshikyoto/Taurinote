@@ -26,7 +26,7 @@ type DirectoryNode = {
 };
 
 type DirectoryTreeNodeProps = RenderTreeNodePayload & {
-  onCloseRootDirectory: () => void;
+  onCloseRootDirectory: (path: string) => void;
 };
 
 function toTreeNode(node: DirectoryNode): TreeNodeData {
@@ -74,7 +74,7 @@ function DirectoryTreeNode({
           c="#5a635e"
           onClick={(event) => {
             event.stopPropagation();
-            onCloseRootDirectory();
+            onCloseRootDirectory(node.value);
           }}
           onKeyDown={(event) => event.stopPropagation()}
           size={20}
@@ -90,12 +90,12 @@ function DirectoryTreeNode({
 }
 
 function Menu() {
-  const [directoryTree, setDirectoryTree] = useState<DirectoryNode | null>(null);
+  const [directoryTrees, setDirectoryTrees] = useState<DirectoryNode[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const treeData = useMemo(
-    () => (directoryTree ? [toTreeNode(directoryTree)] : []),
-    [directoryTree],
+    () => directoryTrees.map(toTreeNode),
+    [directoryTrees],
   );
 
   async function addDirectory() {
@@ -112,7 +112,19 @@ function Menu() {
       const nextTree = await invoke<DirectoryNode>("read_directory_tree", {
         path: selectedPath,
       });
-      setDirectoryTree(nextTree);
+      setDirectoryTrees((currentTrees) => {
+        const existingTreeIndex = currentTrees.findIndex(
+          (tree) => tree.path === nextTree.path,
+        );
+
+        if (existingTreeIndex === -1) {
+          return [...currentTrees, nextTree];
+        }
+
+        return currentTrees.map((tree, index) =>
+          index === existingTreeIndex ? nextTree : tree,
+        );
+      });
     } catch (readError) {
       setError(String(readError));
     } finally {
@@ -120,8 +132,10 @@ function Menu() {
     }
   }
 
-  function closeRootDirectory() {
-    setDirectoryTree(null);
+  function closeRootDirectory(path: string) {
+    setDirectoryTrees((currentTrees) =>
+      currentTrees.filter((tree) => tree.path !== path),
+    );
     setError(null);
   }
 
