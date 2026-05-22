@@ -1,4 +1,18 @@
-# Tauri + React + Typescript
+# Taurinote - Markdown Task Editor
+
+Taurinote は TODO 管理のことを考えてつくられた Markdown エディタです
+
+Taurinote is a Markdown editor designed primarily for TODO management.
+
+Powered by Tauri + React + Typescript.
+
+## ビルド・インストール
+
+```bash
+pnpm tauri build
+```
+
+インストーラーが開くのでアプリケーションに追加します。
 
 ## install reust
 
@@ -27,6 +41,8 @@ pnpm install
 
 # For iOS development, run:
   pnpm tauri ios dev
+```
+
 ```
 
 ## Dependencies
