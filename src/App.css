@@ -28,3 +28,47 @@ body {
 button {
   font: inherit;
 }
+
+.markdown-editor {
+  background: #f4f3ee;
+  color: #17201c;
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+}
+
+.markdown-editor__milkdown {
+  flex: 1;
+  min-height: 100%;
+  min-width: 0;
+}
+
+.markdown-editor__milkdown .milkdown {
+  --crepe-color-background: #f4f3ee;
+  --crepe-color-on-background: #17201c;
+  --crepe-color-surface: #fbfaf7;
+  --crepe-color-surface-low: #e7e5dc;
+  --crepe-color-on-surface: #17201c;
+  --crepe-color-on-surface-variant: #55605b;
+  --crepe-color-outline: #9ba19b;
+  --crepe-color-primary: #245b6c;
+  --crepe-color-secondary: #d1e1e1;
+  --crepe-color-on-secondary: #152325;
+  --crepe-color-hover: #e1e9e5;
+  --crepe-color-selected: #cadbd6;
+  --crepe-color-inline-area: #d9ddd8;
+  --crepe-font-title: inherit;
+  --crepe-font-default: inherit;
+  --crepe-font-code:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  min-height: 100%;
+}
+
+.markdown-editor__milkdown .milkdown .ProseMirror {
+  margin: 0 auto;
+  max-width: 900px;
+  min-height: 100dvh;
+  padding: 42px clamp(24px, 6vw, 84px);
+}

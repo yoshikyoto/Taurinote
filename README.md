@@ -34,3 +34,7 @@ pnpm install
 - Mantine -- ライブラリ
 - Phosphor Icons
 - Milkdown -- Markdown エディタ
+
+## 実装の注意点
+
+- className はなるべく使わすに UI ライブラリである Mantine を利用してください
