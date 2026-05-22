@@ -5,6 +5,10 @@
   padding: 42px clamp(24px, 6vw, 84px);
 }
 
+.milkdownEditor :global(.milkdown .ProseMirror a[href]) {
+  cursor: pointer;
+}
+
 .milkdownEditor :global(.milkdown .milkdown-slash-menu .menu-groups) {
   max-height: min(420px, calc(50dvh - 48px));
 }
