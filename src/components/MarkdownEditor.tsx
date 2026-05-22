@@ -109,6 +109,17 @@ function MilkdownMarkdownEditor({
     const crepe = new Crepe({
       root: rootRef.current,
       defaultValue: initialContent,
+      featureConfigs: {
+        // `/` を押したときに、checkbox とかの List 表記が一番上に来てほしいが
+        // デフォルトだと textGroup が一番上に来てしまっていて、並べ替えなどもできない
+        // textGroup のサジェストは不要なので消す
+        [Crepe.Feature.BlockEdit]: {
+          textGroup: null,
+        },
+        [Crepe.Feature.Placeholder]: {
+          text: "Press `/` to launch menu",
+        },
+      },
     });
 
     crepe.on((listener) => {
