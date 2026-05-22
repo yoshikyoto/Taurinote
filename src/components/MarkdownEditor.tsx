@@ -2,8 +2,10 @@ import { Box, useComputedColorScheme } from "@mantine/core";
 import { Crepe } from "@milkdown/crepe";
 import "@milkdown/crepe/theme/common/style.css";
 import { invoke } from "@tauri-apps/api/core";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   type KeyboardEvent,
+  type MouseEvent,
   useEffect,
   useRef,
   useState,
@@ -26,6 +28,16 @@ function readMarkdownFile(path: string) {
 
 function writeMarkdownFile(path: string, content: string) {
   return invoke<void>("write_markdown_file", { path, content });
+}
+
+function isOpenableUrl(href: string) {
+  try {
+    const url = new URL(href);
+
+    return ["http:", "https:", "mailto:"].includes(url.protocol);
+  } catch {
+    return false;
+  }
 }
 
 type MilkdownMarkdownEditorProps = {
@@ -152,6 +164,18 @@ function MilkdownMarkdownEditor({
     }
   }
 
+  function handleLinkClick(event: MouseEvent<HTMLDivElement>) {
+    if (!(event.target instanceof Element)) return;
+
+    const link = event.target.closest("a[href]");
+    const href = link?.getAttribute("href")?.trim();
+
+    if (!href || !isOpenableUrl(href)) return;
+
+    event.preventDefault();
+    void openUrl(href);
+  }
+
   return (
     <Box
       aria-label={ariaLabel}
@@ -159,6 +183,7 @@ function MilkdownMarkdownEditor({
       flex={1}
       mih="100%"
       miw={0}
+      onClickCapture={handleLinkClick}
       onKeyDownCapture={handleKeyDown}
       ref={rootRef}
       style={
