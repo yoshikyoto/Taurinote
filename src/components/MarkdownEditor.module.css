@@ -1,0 +1,6 @@
+.milkdownEditor :global(.milkdown .ProseMirror) {
+  margin: 0 auto;
+  max-width: 900px;
+  min-height: 100dvh;
+  padding: 42px clamp(24px, 6vw, 84px);
+}

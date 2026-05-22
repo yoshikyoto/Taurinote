@@ -1,7 +1,6 @@
 import { Box } from "@mantine/core";
 import { Crepe } from "@milkdown/crepe";
 import "@milkdown/crepe/theme/common/style.css";
-import "@milkdown/crepe/theme/frame.css";
 import { invoke } from "@tauri-apps/api/core";
 import {
   type KeyboardEvent,
@@ -9,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import classes from "./MarkdownEditor.module.css";
 
 type MarkdownEditorProps = {
   path: string | null;
@@ -34,6 +34,34 @@ type MilkdownMarkdownEditorProps = {
   isSaving: boolean;
   onChange: (content: string) => void;
   onSave: (content: string) => void;
+};
+
+const milkdownThemeVariables = {
+  "--crepe-color-background": "#f4f3ee",
+  "--crepe-color-on-background": "#17201c",
+  "--crepe-color-surface": "#fbfaf7",
+  "--crepe-color-surface-low": "#e7e5dc",
+  "--crepe-color-on-surface": "#17201c",
+  "--crepe-color-on-surface-variant": "#55605b",
+  "--crepe-color-outline": "#9ba19b",
+  "--crepe-color-primary": "#245b6c",
+  "--crepe-color-secondary": "#d1e1e1",
+  "--crepe-color-on-secondary": "#152325",
+  "--crepe-color-inverse": "#f0f0f0",
+  "--crepe-color-on-inverse": "#1a1a1a",
+  "--crepe-color-inline-code": "#ba1a1a",
+  "--crepe-color-error": "#ba1a1a",
+  "--crepe-color-hover": "#e1e9e5",
+  "--crepe-color-selected": "#cadbd6",
+  "--crepe-color-inline-area": "#d9ddd8",
+  "--crepe-font-title": "inherit",
+  "--crepe-font-default": "inherit",
+  "--crepe-font-code":
+    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+  "--crepe-shadow-1":
+    "0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3)",
+  "--crepe-shadow-2":
+    "0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3)",
 };
 
 function MilkdownMarkdownEditor({
@@ -92,11 +120,15 @@ function MilkdownMarkdownEditor({
   }
 
   return (
-    <div
+    <Box
       aria-label={ariaLabel}
-      className="markdown-editor__milkdown"
+      className={classes.milkdownEditor}
+      flex={1}
+      mih="100%"
+      miw={0}
       onKeyDownCapture={handleKeyDown}
       ref={rootRef}
+      style={milkdownThemeVariables}
     />
   );
 }
@@ -183,7 +215,16 @@ function MarkdownEditor({ path }: MarkdownEditorProps) {
   }
 
   return (
-    <Box className="markdown-editor" component="section" h="100dvh">
+    <Box
+      bg="#f4f3ee"
+      c="#17201c"
+      component="section"
+      display="flex"
+      h="100dvh"
+      mih={0}
+      miw={0}
+      style={{ overflow: "auto" }}
+    >
       {!isLoading && loadedPath === path && (
         <MilkdownMarkdownEditor
           ariaLabel={`${fileName(path)} content`}
