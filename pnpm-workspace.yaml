@@ -1,0 +1,2 @@
+patchedDependencies:
+  '@milkdown/plugin-block@7.21.1': patches/@milkdown__plugin-block@7.21.1.patch

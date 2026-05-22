@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@milkdown/plugin-block@7.21.1':
+    hash: edbcf6ed5efa825a6d523f4cfaaff232cf8ae5838a0de50f7a6e1bc7cb025c00
+    path: patches/@milkdown__plugin-block@7.21.1.patch
+
 importers:
 
   .:
@@ -2201,7 +2206,7 @@ snapshots:
       '@milkdown/core': 7.21.1
       '@milkdown/ctx': 7.21.1
       '@milkdown/exception': 7.21.1
-      '@milkdown/plugin-block': 7.21.1
+      '@milkdown/plugin-block': 7.21.1(patch_hash=edbcf6ed5efa825a6d523f4cfaaff232cf8ae5838a0de50f7a6e1bc7cb025c00)
       '@milkdown/plugin-clipboard': 7.21.1
       '@milkdown/plugin-cursor': 7.21.1
       '@milkdown/plugin-diff': 7.21.1
@@ -2225,7 +2230,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@milkdown/plugin-block@7.21.1':
+  '@milkdown/plugin-block@7.21.1(patch_hash=edbcf6ed5efa825a6d523f4cfaaff232cf8ae5838a0de50f7a6e1bc7cb025c00)':
     dependencies:
       '@floating-ui/dom': 1.7.6
       '@milkdown/core': 7.21.1

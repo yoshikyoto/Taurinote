@@ -11,9 +11,10 @@
   cursor: pointer;
 }
 
-/* Tauri でもドラッグが正しく取れるようにする */
 .milkdownEditor :global(.milkdown .milkdown-block-handle) {
+  /* Tauri でもドラッグが正しく取れるようにする */
   -webkit-user-drag: element;
+  /* 要素の左に出てくるハンドルの動きを俊敏にしたいのでアニメーションを切る */
   transition: none;
 }
 

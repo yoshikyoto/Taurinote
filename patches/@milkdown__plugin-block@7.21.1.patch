@@ -1,0 +1,26 @@
+diff --git a/lib/index.js b/lib/index.js
+index aaebefca4f7b077394afaa806cb6b8567da99a42..fa87c6983588178e2e0a4f69acf24bed2bb2cd19 100644
+--- a/lib/index.js
++++ b/lib/index.js
+@@ -170,7 +170,7 @@ var BlockService = class {
+ 				return;
+ 			}
+ 			this.#show(result);
+-		}, 200);
++			}, 0);
+ 		this.mousemoveCallback = (view, event) => {
+ 			if (view.composing || !view.editable) return false;
+ 			this.#mousemoveCallback(view, event);
+diff --git a/src/block-service.ts b/src/block-service.ts
+index 98296431623be49e96cc78784171593e7b9eebab..387f347328ae45866e4ec1fa5afcd1250e3a32cc 100644
+--- a/src/block-service.ts
++++ b/src/block-service.ts
+@@ -215,7 +215,7 @@ export class BlockService {
+       return
+     }
+     this.#show(result)
+-  }, 200)
++  }, 0)
+ 
+   /// @internal
+   mousemoveCallback = (view: EditorView, event: MouseEvent) => {
