@@ -1,10 +1,19 @@
-import { AppShell, Button, ScrollArea, Text } from "@mantine/core";
+import {
+  AppShell,
+  Button,
+  Group,
+  RenderTreeNodePayload,
+  ScrollArea,
+  Text,
+  Tree,
+  TreeNodeData,
+} from "@mantine/core";
 import { FileIcon } from "@phosphor-icons/react/dist/csr/File";
 import { FolderIcon } from "@phosphor-icons/react/dist/csr/Folder";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import "./App.css";
 
 type DirectoryNode = {
@@ -14,32 +23,40 @@ type DirectoryNode = {
   children: DirectoryNode[];
 };
 
-function DirectoryTree({ node }: { node: DirectoryNode }) {
-  if (node.kind === "file") {
-    return (
-      <li className="tree-item tree-file">
-        <FileIcon className="tree-icon file-icon" aria-hidden size={16} />
-        <span className="tree-name">{node.name}</span>
-      </li>
-    );
-  }
+function toTreeNode(node: DirectoryNode): TreeNodeData {
+  return {
+    label: node.name,
+    value: node.path,
+    nodeProps: { kind: node.kind },
+    children:
+      node.kind === "directory" ? node.children.map(toTreeNode) : undefined,
+  };
+}
+
+function DirectoryTreeNode({
+  node,
+  elementProps,
+}: RenderTreeNodePayload) {
+  const isDirectory = node.nodeProps?.kind === "directory";
 
   return (
-    <li className="tree-item tree-directory">
-      <details open>
-        <summary title={node.path}>
-          <FolderIcon className="tree-icon folder-icon" aria-hidden size={17} />
-          <span className="tree-name">{node.name}</span>
-        </summary>
-        {node.children.length > 0 && (
-          <ul className="tree-list">
-            {node.children.map((child) => (
-              <DirectoryTree key={child.path} node={child} />
-            ))}
-          </ul>
-        )}
-      </details>
-    </li>
+    <Group gap={6} wrap="nowrap" title={node.value} {...elementProps}>
+      {isDirectory ? (
+        <FolderIcon aria-hidden color="#55715f" size={17} />
+      ) : (
+        <FileIcon aria-hidden color="#6b736e" size={16} />
+      )}
+      <Text
+        component="span"
+        fz="0.82rem"
+        lh={1.3}
+        miw={0}
+        style={{ flex: 1 }}
+        truncate
+      >
+        {node.label}
+      </Text>
+    </Group>
   );
 }
 
@@ -47,6 +64,10 @@ function App() {
   const [directoryTree, setDirectoryTree] = useState<DirectoryNode | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const treeData = useMemo(
+    () => (directoryTree ? [toTreeNode(directoryTree)] : []),
+    [directoryTree],
+  );
 
   async function addDirectory() {
     const selectedPath = await open({
@@ -78,10 +99,23 @@ function App() {
     >
       <AppShell.Navbar className="sidebar" aria-label="Menu">
         <ScrollArea className="sidebar-content">
-          {directoryTree && (
-            <ul className="tree-list tree-root">
-              <DirectoryTree node={directoryTree} />
-            </ul>
+          {treeData.length > 0 && (
+            <Tree
+              c="#25312c"
+              data={treeData}
+              levelOffset={18}
+              renderNode={(payload) => <DirectoryTreeNode {...payload} />}
+              styles={{
+                label: {
+                  borderRadius: 6,
+                  minHeight: 24,
+                  paddingBlock: 2,
+                  paddingInlineEnd: 5,
+                  paddingInlineStart: "calc(var(--label-offset) + 5px)",
+                },
+                root: { padding: 0 },
+              }}
+            />
           )}
           {error && (
             <Text className="directory-error" c="red" size="xs">

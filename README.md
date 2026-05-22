@@ -28,3 +28,8 @@ pnpm install
 # For iOS development, run:
   pnpm tauri ios dev
 ```
+
+## Dependencies
+
+- Mantine -- ライブラリ
+- Phosphor Icons
