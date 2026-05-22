@@ -203,9 +203,22 @@ function MarkdownEditor({ path }: MarkdownEditorProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [loadedPath, setLoadedPath] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const contentRef = useRef("");
   const savedContentRef = useRef("");
   const isSavingRef = useRef(false);
+
+  useEffect(() => {
+    function handleFocus() {
+      setReloadKey((currentKey) => currentKey + 1);
+    }
+
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, []);
 
   useEffect(() => {
     if (!path) {
@@ -246,7 +259,7 @@ function MarkdownEditor({ path }: MarkdownEditorProps) {
     return () => {
       isCancelled = true;
     };
-  }, [path]);
+  }, [path, reloadKey]);
 
   function updateContent(nextContent: string) {
     contentRef.current = nextContent;
