@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   AppShell,
   Button,
   Group,
@@ -12,6 +13,7 @@ import { FileIcon } from "@phosphor-icons/react/dist/csr/File";
 import { FolderIcon } from "@phosphor-icons/react/dist/csr/Folder";
 import { FolderOpenIcon } from "@phosphor-icons/react/dist/csr/FolderOpen";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
+import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useMemo, useState } from "react";
@@ -21,6 +23,10 @@ type DirectoryNode = {
   path: string;
   kind: "directory" | "file";
   children: DirectoryNode[];
+};
+
+type DirectoryTreeNodeProps = RenderTreeNodePayload & {
+  onCloseRootDirectory: () => void;
 };
 
 function toTreeNode(node: DirectoryNode): TreeNodeData {
@@ -37,8 +43,11 @@ function DirectoryTreeNode({
   node,
   expanded,
   elementProps,
-}: RenderTreeNodePayload) {
+  level,
+  onCloseRootDirectory,
+}: DirectoryTreeNodeProps) {
   const isDirectory = node.nodeProps?.kind === "directory";
+  const isRoot = level === 1;
 
   return (
     <Group gap={6} wrap="nowrap" title={node.value} {...elementProps}>
@@ -59,6 +68,23 @@ function DirectoryTreeNode({
       >
         {node.label}
       </Text>
+      {isRoot && (
+        <ActionIcon
+          aria-label="Close directory"
+          c="#5a635e"
+          onClick={(event) => {
+            event.stopPropagation();
+            onCloseRootDirectory();
+          }}
+          onKeyDown={(event) => event.stopPropagation()}
+          size={20}
+          title="Close directory"
+          type="button"
+          variant="subtle"
+        >
+          <XIcon aria-hidden size={13} weight="bold" />
+        </ActionIcon>
+      )}
     </Group>
   );
 }
@@ -94,6 +120,11 @@ function Menu() {
     }
   }
 
+  function closeRootDirectory() {
+    setDirectoryTree(null);
+    setError(null);
+  }
+
   return (
     <AppShell.Navbar
       aria-label="Menu"
@@ -116,7 +147,12 @@ function Menu() {
             c="#25312c"
             data={treeData}
             levelOffset={18}
-            renderNode={(payload) => <DirectoryTreeNode {...payload} />}
+            renderNode={(payload) => (
+              <DirectoryTreeNode
+                {...payload}
+                onCloseRootDirectory={closeRootDirectory}
+              />
+            )}
             styles={{
               label: {
                 borderRadius: 6,
