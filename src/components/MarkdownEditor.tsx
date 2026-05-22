@@ -117,7 +117,7 @@ function MilkdownMarkdownEditor({
           textGroup: null,
         },
         [Crepe.Feature.Placeholder]: {
-          text: "Press `/` to launch menu",
+          text: "Press `/` to open menu",
         },
       },
     });
