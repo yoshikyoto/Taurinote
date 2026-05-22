@@ -1,4 +1,4 @@
-import { Box } from "@mantine/core";
+import { Box, useComputedColorScheme } from "@mantine/core";
 import { Crepe } from "@milkdown/crepe";
 import "@milkdown/crepe/theme/common/style.css";
 import { invoke } from "@tauri-apps/api/core";
@@ -36,7 +36,7 @@ type MilkdownMarkdownEditorProps = {
   onSave: (content: string) => void;
 };
 
-const milkdownThemeVariables = {
+const lightMilkdownThemeVariables = {
   "--crepe-color-background": "#f4f3ee",
   "--crepe-color-on-background": "#17201c",
   "--crepe-color-surface": "#fbfaf7",
@@ -64,6 +64,27 @@ const milkdownThemeVariables = {
     "0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3)",
 };
 
+const darkMilkdownThemeVariables = {
+  ...lightMilkdownThemeVariables,
+  "--crepe-color-background": "#141816",
+  "--crepe-color-on-background": "#e2ebe5",
+  "--crepe-color-surface": "#1d2421",
+  "--crepe-color-surface-low": "#202a26",
+  "--crepe-color-on-surface": "#e2ebe5",
+  "--crepe-color-on-surface-variant": "#b2bdb7",
+  "--crepe-color-outline": "#68736d",
+  "--crepe-color-primary": "#8bc5d6",
+  "--crepe-color-secondary": "#29474d",
+  "--crepe-color-on-secondary": "#e4f0ee",
+  "--crepe-color-inverse": "#e2ebe5",
+  "--crepe-color-on-inverse": "#18201c",
+  "--crepe-color-inline-code": "#ffb0ab",
+  "--crepe-color-error": "#ffb0ab",
+  "--crepe-color-hover": "#26332e",
+  "--crepe-color-selected": "#355047",
+  "--crepe-color-inline-area": "#27302d",
+};
+
 function MilkdownMarkdownEditor({
   ariaLabel,
   initialContent,
@@ -71,6 +92,7 @@ function MilkdownMarkdownEditor({
   onChange,
   onSave,
 }: MilkdownMarkdownEditorProps) {
+  const colorScheme = useComputedColorScheme("light");
   const rootRef = useRef<HTMLDivElement>(null);
   const crepeRef = useRef<Crepe | null>(null);
   const onChangeRef = useRef(onChange);
@@ -128,12 +150,19 @@ function MilkdownMarkdownEditor({
       miw={0}
       onKeyDownCapture={handleKeyDown}
       ref={rootRef}
-      style={milkdownThemeVariables}
+      style={
+        colorScheme === "dark"
+          ? darkMilkdownThemeVariables
+          : lightMilkdownThemeVariables
+      }
     />
   );
 }
 
 function MarkdownEditor({ path }: MarkdownEditorProps) {
+  const colorScheme = useComputedColorScheme("light");
+  const editorBackground = colorScheme === "dark" ? "#141816" : "#f4f3ee";
+  const editorText = colorScheme === "dark" ? "#e2ebe5" : "#17201c";
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -211,13 +240,13 @@ function MarkdownEditor({ path }: MarkdownEditorProps) {
   }
 
   if (!path) {
-    return <Box bg="#f4f3ee" component="section" h="100dvh" />;
+    return <Box bg={editorBackground} component="section" h="100dvh" />;
   }
 
   return (
     <Box
-      bg="#f4f3ee"
-      c="#17201c"
+      bg={editorBackground}
+      c={editorText}
       component="section"
       display="flex"
       h="100dvh"

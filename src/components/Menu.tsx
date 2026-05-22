@@ -8,11 +8,15 @@ import {
   Text,
   Tree,
   TreeNodeData,
+  useComputedColorScheme,
+  useMantineColorScheme,
 } from "@mantine/core";
 import { FileIcon } from "@phosphor-icons/react/dist/csr/File";
 import { FolderIcon } from "@phosphor-icons/react/dist/csr/Folder";
 import { FolderOpenIcon } from "@phosphor-icons/react/dist/csr/FolderOpen";
+import { MoonIcon } from "@phosphor-icons/react/dist/csr/Moon";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
+import { SunIcon } from "@phosphor-icons/react/dist/csr/Sun";
 import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -28,6 +32,11 @@ type DirectoryNode = {
 };
 
 type DirectoryTreeNodeProps = RenderTreeNodePayload & {
+  colors: {
+    fileIcon: string;
+    folderIcon: string;
+    textSubtle: string;
+  };
   onCloseRootDirectory: (path: string) => void;
   onOpenMarkdownFile: (path: string) => void;
 };
@@ -76,6 +85,7 @@ function DirectoryTreeNode({
   expanded,
   elementProps,
   level,
+  colors,
   onCloseRootDirectory,
   onOpenMarkdownFile,
 }: DirectoryTreeNodeProps) {
@@ -101,11 +111,11 @@ function DirectoryTreeNode({
       onClick={handleClick}
     >
       {isDirectory && expanded ? (
-        <FolderOpenIcon aria-hidden color="#55715f" size={17} />
+        <FolderOpenIcon aria-hidden color={colors.folderIcon} size={17} />
       ) : isDirectory ? (
-        <FolderIcon aria-hidden color="#55715f" size={17} />
+        <FolderIcon aria-hidden color={colors.folderIcon} size={17} />
       ) : (
-        <FileIcon aria-hidden color="#6b736e" size={16} />
+        <FileIcon aria-hidden color={colors.fileIcon} size={16} />
       )}
       <Text
         component="span"
@@ -120,7 +130,7 @@ function DirectoryTreeNode({
       {isRoot && (
         <ActionIcon
           aria-label="Close directory"
-          c="#5a635e"
+          c={colors.textSubtle}
           onClick={(event) => {
             event.stopPropagation();
             onCloseRootDirectory(node.value);
@@ -143,6 +153,8 @@ type MenuProps = {
 };
 
 function Menu({ onOpenMarkdownFile }: MenuProps) {
+  const colorScheme = useComputedColorScheme("light");
+  const { setColorScheme } = useMantineColorScheme();
   const [directoryTrees, setDirectoryTrees] = useState<DirectoryNode[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -151,6 +163,28 @@ function Menu({ onOpenMarkdownFile }: MenuProps) {
     () => directoryTrees.map(toTreeNode),
     [directoryTrees],
   );
+  const isDarkMode = colorScheme === "dark";
+  const menuColors = isDarkMode
+    ? {
+        border: "#313936",
+        error: "#ff9a91",
+        fileIcon: "#9ca7a2",
+        folderIcon: "#8fb6a1",
+        hover: "#25302b",
+        navbar: "#101412",
+        text: "#dfe7e2",
+        textSubtle: "#b9c4be",
+      }
+    : {
+        border: "#d7d4c8",
+        error: "#a33c35",
+        fileIcon: "#6b736e",
+        folderIcon: "#55715f",
+        hover: "#eaf5ee",
+        navbar: "#fffdfa",
+        text: "#25312c",
+        textSubtle: "#5a635e",
+      };
 
   useEffect(() => {
     const savedPaths = loadOpenDirectoryPaths();
@@ -237,9 +271,9 @@ function Menu({ onOpenMarkdownFile }: MenuProps) {
   return (
     <AppShell.Navbar
       aria-label="Menu"
-      bg="#fffdfa"
+      bg={menuColors.navbar}
       style={{
-        borderRight: "1px solid #d7d4c8",
+        borderRight: `1px solid ${menuColors.border}`,
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
@@ -253,12 +287,13 @@ function Menu({ onOpenMarkdownFile }: MenuProps) {
       >
         {treeData.length > 0 && (
           <Tree
-            c="#25312c"
+            c={menuColors.text}
             data={treeData}
             levelOffset={18}
             renderNode={(payload) => (
               <DirectoryTreeNode
                 {...payload}
+                colors={menuColors}
                 onCloseRootDirectory={closeRootDirectory}
                 onOpenMarkdownFile={onOpenMarkdownFile}
               />
@@ -277,7 +312,7 @@ function Menu({ onOpenMarkdownFile }: MenuProps) {
         )}
         {error && (
           <Text
-            c="#a33c35"
+            c={menuColors.error}
             fz="0.78rem"
             m={8}
             size="xs"
@@ -287,31 +322,54 @@ function Menu({ onOpenMarkdownFile }: MenuProps) {
           </Text>
         )}
       </ScrollArea>
-      <Button
-        disabled={isLoading}
-        fw={700}
-        justify="flex-start"
-        leftSection={<PlusIcon aria-hidden size={16} weight="bold" />}
-        loading={isLoading}
-        mih={42}
-        onClick={addDirectory}
-        px={14}
-        py={0}
-        radius={0}
-        style={{ borderTop: "1px solid #d7d4c8" }}
-        type="button"
-        vars={() => ({
-          root: {
-            "--button-bg": "#fffdfa",
-            "--button-bd": "0",
-            "--button-color": "#18211d",
-            "--button-hover": "#eaf5ee",
-          },
-        })}
-        variant="subtle"
+      <Group
+        gap={0}
+        style={{ borderTop: `1px solid ${menuColors.border}` }}
+        wrap="nowrap"
       >
-        Add Directory
-      </Button>
+        <ActionIcon
+          aria-label={`Switch to ${isDarkMode ? "light" : "dark"} mode`}
+          c={menuColors.text}
+          h={42}
+          onClick={() => setColorScheme(isDarkMode ? "light" : "dark")}
+          radius={0}
+          title={`Switch to ${isDarkMode ? "light" : "dark"} mode`}
+          type="button"
+          variant="subtle"
+          w={42}
+        >
+          {isDarkMode ? (
+            <SunIcon aria-hidden size={18} weight="bold" />
+          ) : (
+            <MoonIcon aria-hidden size={18} weight="bold" />
+          )}
+        </ActionIcon>
+        <Button
+          disabled={isLoading}
+          flex={1}
+          fw={700}
+          justify="flex-start"
+          leftSection={<PlusIcon aria-hidden size={16} weight="bold" />}
+          loading={isLoading}
+          mih={42}
+          onClick={addDirectory}
+          px={14}
+          py={0}
+          radius={0}
+          type="button"
+          vars={() => ({
+            root: {
+              "--button-bg": menuColors.navbar,
+              "--button-bd": "0",
+              "--button-color": menuColors.text,
+              "--button-hover": menuColors.hover,
+            },
+          })}
+          variant="subtle"
+        >
+          Add Directory
+        </Button>
+      </Group>
     </AppShell.Navbar>
   );
 }
