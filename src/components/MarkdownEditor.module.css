@@ -1,3 +1,4 @@
+/* milkdown の内部的な CSS を修正したい場合はこれを利用する */
 .milkdownEditor :global(.milkdown .ProseMirror) {
   margin: 0 auto;
   max-width: 900px;
@@ -5,8 +6,14 @@
   padding: 42px clamp(24px, 6vw, 84px);
 }
 
+/* Milkdown でリンクをクリックしたらページを開くようにしたのでポインタも変更するようにした */
 .milkdownEditor :global(.milkdown .ProseMirror a[href]) {
   cursor: pointer;
+}
+
+/* Tauri でもドラッグが正しく取れるようにする */
+.milkdownEditor :global(.milkdown .milkdown-block-handle) {
+  -webkit-user-drag: element;
 }
 
 .milkdownEditor :global(.milkdown .milkdown-slash-menu .menu-groups) {
