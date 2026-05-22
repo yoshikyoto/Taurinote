@@ -10,7 +10,10 @@ function App() {
 
   return (
     <AppShell navbar={{ width: 260, breakpoint: "xs" }} padding={0}>
-      <Menu onOpenMarkdownFile={setOpenMarkdownPath} />
+      <Menu
+        openMarkdownPath={openMarkdownPath}
+        onOpenMarkdownFile={setOpenMarkdownPath}
+      />
       <AppShell.Main
         aria-label="Workspace"
         bg={colorScheme === "dark" ? "#141816" : "#f4f3ee"}

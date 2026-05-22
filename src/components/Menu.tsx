@@ -33,10 +33,12 @@ type DirectoryNode = {
 
 type DirectoryTreeNodeProps = RenderTreeNodePayload & {
   colors: {
+    active: string;
     fileIcon: string;
     folderIcon: string;
     textSubtle: string;
   };
+  openMarkdownPath: string | null;
   onCloseRootDirectory: (path: string) => void;
   onOpenMarkdownFile: (path: string) => void;
 };
@@ -86,6 +88,7 @@ function DirectoryTreeNode({
   elementProps,
   level,
   colors,
+  openMarkdownPath,
   onCloseRootDirectory,
   onOpenMarkdownFile,
 }: DirectoryTreeNodeProps) {
@@ -93,6 +96,8 @@ function DirectoryTreeNode({
   const isRoot = level === 1;
   const isMarkdownFile =
     !isDirectory && /\.(md|markdown)$/i.test(node.value);
+  const isOpenMarkdownFile =
+    isMarkdownFile && node.value === openMarkdownPath;
 
   function handleClick(event: React.MouseEvent) {
     elementProps.onClick(event);
@@ -108,6 +113,8 @@ function DirectoryTreeNode({
       wrap="nowrap"
       title={node.value}
       {...elementProps}
+      aria-current={isOpenMarkdownFile ? "page" : undefined}
+      bg={isOpenMarkdownFile ? colors.active : undefined}
       onClick={handleClick}
     >
       {isDirectory && expanded ? (
@@ -123,6 +130,7 @@ function DirectoryTreeNode({
         lh={1.3}
         miw={0}
         style={{ flex: 1 }}
+        fw={isOpenMarkdownFile ? 700 : undefined}
         truncate
       >
         {node.label}
@@ -149,10 +157,11 @@ function DirectoryTreeNode({
 }
 
 type MenuProps = {
+  openMarkdownPath: string | null;
   onOpenMarkdownFile: (path: string) => void;
 };
 
-function Menu({ onOpenMarkdownFile }: MenuProps) {
+function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
   const colorScheme = useComputedColorScheme("light");
   const { setColorScheme } = useMantineColorScheme();
   const [directoryTrees, setDirectoryTrees] = useState<DirectoryNode[]>([]);
@@ -166,6 +175,7 @@ function Menu({ onOpenMarkdownFile }: MenuProps) {
   const isDarkMode = colorScheme === "dark";
   const menuColors = isDarkMode
     ? {
+        active: "#355047",
         border: "#313936",
         error: "#ff9a91",
         fileIcon: "#9ca7a2",
@@ -176,6 +186,7 @@ function Menu({ onOpenMarkdownFile }: MenuProps) {
         textSubtle: "#b9c4be",
       }
     : {
+        active: "#d8e8e1",
         border: "#d7d4c8",
         error: "#a33c35",
         fileIcon: "#6b736e",
@@ -294,6 +305,7 @@ function Menu({ onOpenMarkdownFile }: MenuProps) {
               <DirectoryTreeNode
                 {...payload}
                 colors={menuColors}
+                openMarkdownPath={openMarkdownPath}
                 onCloseRootDirectory={closeRootDirectory}
                 onOpenMarkdownFile={onOpenMarkdownFile}
               />
