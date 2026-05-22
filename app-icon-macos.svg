@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <clipPath id="macos-icon-mask">
+      <rect x="72" y="72" width="880" height="880" rx="198" />
+    </clipPath>
+  </defs>
+  <image
+    href="app-icon.png"
+    x="72"
+    y="72"
+    width="880"
+    height="880"
+    preserveAspectRatio="xMidYMid slice"
+    clip-path="url(#macos-icon-mask)"
+  />
+</svg>
