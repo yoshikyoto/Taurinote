@@ -29,6 +29,7 @@ type DirectoryNode = {
 
 type DirectoryTreeNodeProps = RenderTreeNodePayload & {
   onCloseRootDirectory: (path: string) => void;
+  onOpenMarkdownFile: (path: string) => void;
 };
 
 function loadOpenDirectoryPaths() {
@@ -76,12 +77,29 @@ function DirectoryTreeNode({
   elementProps,
   level,
   onCloseRootDirectory,
+  onOpenMarkdownFile,
 }: DirectoryTreeNodeProps) {
   const isDirectory = node.nodeProps?.kind === "directory";
   const isRoot = level === 1;
+  const isMarkdownFile =
+    !isDirectory && /\.(md|markdown)$/i.test(node.value);
+
+  function handleClick(event: React.MouseEvent) {
+    elementProps.onClick(event);
+
+    if (isMarkdownFile) {
+      onOpenMarkdownFile(node.value);
+    }
+  }
 
   return (
-    <Group gap={6} wrap="nowrap" title={node.value} {...elementProps}>
+    <Group
+      gap={6}
+      wrap="nowrap"
+      title={node.value}
+      {...elementProps}
+      onClick={handleClick}
+    >
       {isDirectory && expanded ? (
         <FolderOpenIcon aria-hidden color="#55715f" size={17} />
       ) : isDirectory ? (
@@ -120,7 +138,11 @@ function DirectoryTreeNode({
   );
 }
 
-function Menu() {
+type MenuProps = {
+  onOpenMarkdownFile: (path: string) => void;
+};
+
+function Menu({ onOpenMarkdownFile }: MenuProps) {
   const [directoryTrees, setDirectoryTrees] = useState<DirectoryNode[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -238,6 +260,7 @@ function Menu() {
               <DirectoryTreeNode
                 {...payload}
                 onCloseRootDirectory={closeRootDirectory}
+                onOpenMarkdownFile={onOpenMarkdownFile}
               />
             )}
             styles={{
