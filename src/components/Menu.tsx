@@ -20,7 +20,7 @@ import { SunIcon } from "@phosphor-icons/react/dist/csr/Sun";
 import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 const OPEN_DIRECTORY_PATHS_STORAGE_KEY = "openDirectoryPaths";
 
@@ -70,6 +70,22 @@ function saveOpenDirectoryPaths(directoryTrees: DirectoryNode[]) {
 
 function readDirectoryTree(path: string) {
   return invoke<DirectoryNode>("read_directory_tree", { path });
+}
+
+async function readDirectoryTrees(paths: string[]) {
+  const results = await Promise.allSettled(paths.map(readDirectoryTree));
+  const trees: DirectoryNode[] = [];
+  const errors: string[] = [];
+
+  results.forEach((result) => {
+    if (result.status === "fulfilled") {
+      trees.push(result.value);
+    } else {
+      errors.push(String(result.reason));
+    }
+  });
+
+  return { trees, error: errors[0] ?? null };
 }
 
 function toTreeNode(node: DirectoryNode): TreeNodeData {
@@ -197,6 +213,19 @@ function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
         textSubtle: "#5a635e",
       };
 
+  const refreshDirectoryTrees = useCallback(async (paths: string[]) => {
+    if (paths.length === 0) return;
+
+    setIsLoading(true);
+    try {
+      const { trees, error: nextError } = await readDirectoryTrees(paths);
+      setDirectoryTrees(trees);
+      setError(nextError);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const savedPaths = loadOpenDirectoryPaths();
     if (savedPaths.length === 0) {
@@ -207,27 +236,23 @@ function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
     let isCancelled = false;
     setIsLoading(true);
 
-    void Promise.allSettled(savedPaths.map(readDirectoryTree)).then(
-      (results) => {
+    void readDirectoryTrees(savedPaths)
+      .then(({ trees, error: restoreError }) => {
         if (isCancelled) return;
 
-        const restoredTrees: DirectoryNode[] = [];
-        const restoreErrors: string[] = [];
-
-        results.forEach((result) => {
-          if (result.status === "fulfilled") {
-            restoredTrees.push(result.value);
-          } else {
-            restoreErrors.push(String(result.reason));
-          }
-        });
-
-        setDirectoryTrees(restoredTrees);
-        setError(restoreErrors[0] ?? null);
+        setDirectoryTrees(trees);
+        setError(restoreError);
         setIsInitialized(true);
         setIsLoading(false);
-      },
-    );
+      })
+      .catch((restoreError) => {
+        if (isCancelled) return;
+
+        setDirectoryTrees([]);
+        setError(String(restoreError));
+        setIsInitialized(true);
+        setIsLoading(false);
+      });
 
     return () => {
       isCancelled = true;
@@ -239,6 +264,22 @@ function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
       saveOpenDirectoryPaths(directoryTrees);
     }
   }, [directoryTrees, isInitialized]);
+
+  useEffect(() => {
+    if (!isInitialized || directoryTrees.length === 0) return;
+
+    const paths = directoryTrees.map((tree) => tree.path);
+
+    function handleFocus() {
+      void refreshDirectoryTrees(paths);
+    }
+
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [directoryTrees, isInitialized, refreshDirectoryTrees]);
 
   async function addDirectory() {
     const selectedPath = await open({
