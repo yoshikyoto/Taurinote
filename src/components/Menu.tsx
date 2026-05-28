@@ -10,6 +10,7 @@ import {
   TreeNodeData,
   useComputedColorScheme,
   useMantineColorScheme,
+  useTree,
 } from "@mantine/core";
 import { FileIcon } from "@phosphor-icons/react/dist/csr/File";
 import { FolderIcon } from "@phosphor-icons/react/dist/csr/Folder";
@@ -98,6 +99,15 @@ function toTreeNode(node: DirectoryNode): TreeNodeData {
   };
 }
 
+function collectDirectoryPaths(node: DirectoryNode): string[] {
+  if (node.kind !== "directory") return [];
+
+  return [
+    node.path,
+    ...node.children.flatMap((child) => collectDirectoryPaths(child)),
+  ];
+}
+
 function DirectoryTreeNode({
   node,
   expanded,
@@ -180,6 +190,7 @@ type MenuProps = {
 function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
   const colorScheme = useComputedColorScheme("light");
   const { setColorScheme } = useMantineColorScheme();
+  const tree = useTree();
   const [directoryTrees, setDirectoryTrees] = useState<DirectoryNode[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -317,6 +328,18 @@ function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
     setDirectoryTrees((currentTrees) =>
       currentTrees.filter((tree) => tree.path !== path),
     );
+    tree.setExpandedState((currentState) => {
+      const closedTree = directoryTrees.find((tree) => tree.path === path);
+      if (!closedTree) return currentState;
+
+      const closedDirectoryPaths = new Set(collectDirectoryPaths(closedTree));
+
+      return Object.fromEntries(
+        Object.entries(currentState).filter(
+          ([directoryPath]) => !closedDirectoryPaths.has(directoryPath),
+        ),
+      );
+    });
     setError(null);
   }
 
@@ -361,6 +384,7 @@ function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
               },
               root: { padding: 0 },
             }}
+            tree={tree}
           />
         )}
         {error && (
