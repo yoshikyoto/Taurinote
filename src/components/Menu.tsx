@@ -23,7 +23,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  loadExpandedDirectoryPaths,
   loadOpenDirectoryPaths,
+  saveExpandedDirectoryPaths,
   saveOpenDirectoryPaths,
 } from "../lib/repository/directoryStateRepository";
 
@@ -83,6 +85,21 @@ function collectDirectoryPaths(node: DirectoryNode): string[] {
     node.path,
     ...node.children.flatMap((child) => collectDirectoryPaths(child)),
   ];
+}
+
+function toExpandedState(paths: string[]) {
+  return Object.fromEntries(paths.map((path) => [path, true]));
+}
+
+function toExpandedDirectoryPaths(
+  expandedState: Record<string, boolean>,
+  directoryTrees: DirectoryNode[],
+) {
+  const directoryPaths = new Set(directoryTrees.flatMap(collectDirectoryPaths));
+
+  return Object.entries(expandedState)
+    .filter(([path, isExpanded]) => isExpanded && directoryPaths.has(path))
+    .map(([path]) => path);
 }
 
 function DirectoryTreeNode({
@@ -167,7 +184,10 @@ type MenuProps = {
 function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
   const colorScheme = useComputedColorScheme("light");
   const { setColorScheme } = useMantineColorScheme();
-  const tree = useTree();
+  const [initialExpandedState] = useState(() =>
+    toExpandedState(loadExpandedDirectoryPaths()),
+  );
+  const tree = useTree({ initialExpandedState });
   const [directoryTrees, setDirectoryTrees] = useState<DirectoryNode[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -252,6 +272,14 @@ function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
       saveOpenDirectoryPaths(directoryTrees.map((tree) => tree.path));
     }
   }, [directoryTrees, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized) {
+      saveExpandedDirectoryPaths(
+        toExpandedDirectoryPaths(tree.expandedState, directoryTrees),
+      );
+    }
+  }, [directoryTrees, isInitialized, tree.expandedState]);
 
   useEffect(() => {
     if (!isInitialized || directoryTrees.length === 0) return;

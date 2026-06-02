@@ -1,4 +1,5 @@
 const OPEN_DIRECTORY_PATHS_STORAGE_KEY = "openDirectoryPaths";
+const EXPANDED_DIRECTORY_PATHS_STORAGE_KEY = "expandedDirectoryPaths";
 
 function loadStringArray(key: string) {
   try {
@@ -28,4 +29,12 @@ export function loadOpenDirectoryPaths() {
 
 export function saveOpenDirectoryPaths(paths: string[]) {
   saveStringArray(OPEN_DIRECTORY_PATHS_STORAGE_KEY, paths);
+}
+
+export function loadExpandedDirectoryPaths() {
+  return loadStringArray(EXPANDED_DIRECTORY_PATHS_STORAGE_KEY);
+}
+
+export function saveExpandedDirectoryPaths(paths: string[]) {
+  saveStringArray(EXPANDED_DIRECTORY_PATHS_STORAGE_KEY, paths);
 }
