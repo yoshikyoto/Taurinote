@@ -22,8 +22,10 @@ import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
-
-const OPEN_DIRECTORY_PATHS_STORAGE_KEY = "openDirectoryPaths";
+import {
+  loadOpenDirectoryPaths,
+  saveOpenDirectoryPaths,
+} from "../lib/repository/directoryStateRepository";
 
 type DirectoryNode = {
   name: string;
@@ -43,31 +45,6 @@ type DirectoryTreeNodeProps = RenderTreeNodePayload & {
   onCloseRootDirectory: (path: string) => void;
   onOpenMarkdownFile: (path: string) => void;
 };
-
-function loadOpenDirectoryPaths() {
-  try {
-    const savedPaths = JSON.parse(
-      localStorage.getItem(OPEN_DIRECTORY_PATHS_STORAGE_KEY) ?? "[]",
-    );
-
-    if (!Array.isArray(savedPaths)) return [];
-
-    return [...new Set(savedPaths.filter((path) => typeof path === "string"))];
-  } catch {
-    return [];
-  }
-}
-
-function saveOpenDirectoryPaths(directoryTrees: DirectoryNode[]) {
-  try {
-    localStorage.setItem(
-      OPEN_DIRECTORY_PATHS_STORAGE_KEY,
-      JSON.stringify(directoryTrees.map((tree) => tree.path)),
-    );
-  } catch {
-    return;
-  }
-}
 
 function readDirectoryTree(path: string) {
   return invoke<DirectoryNode>("read_directory_tree", { path });
@@ -272,7 +249,7 @@ function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
 
   useEffect(() => {
     if (isInitialized) {
-      saveOpenDirectoryPaths(directoryTrees);
+      saveOpenDirectoryPaths(directoryTrees.map((tree) => tree.path));
     }
   }, [directoryTrees, isInitialized]);
 
