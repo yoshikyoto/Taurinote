@@ -1,5 +1,8 @@
 use serde::Serialize;
-use std::{fs, path::Path};
+use std::{
+    fs::{self, OpenOptions},
+    path::Path,
+};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -72,6 +75,39 @@ fn read_markdown_file(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
+fn create_markdown_file(directory_path: String, file_name: String) -> Result<String, String> {
+    let directory_path = Path::new(&directory_path);
+    let metadata = fs::metadata(directory_path).map_err(|error| error.to_string())?;
+    if !metadata.is_dir() {
+        return Err("The selected path is not a directory.".to_string());
+    }
+
+    let trimmed_name = file_name.trim();
+    if trimmed_name.is_empty()
+        || trimmed_name == "."
+        || trimmed_name == ".."
+        || trimmed_name.contains('/')
+        || trimmed_name.contains('\\')
+    {
+        return Err("Invalid file name.".to_string());
+    }
+
+    let stem = Path::new(trimmed_name)
+        .file_stem()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| "Invalid file name.".to_string())?;
+    let path = directory_path.join(format!("{stem}.md"));
+
+    OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&path)
+        .map_err(|error| error.to_string())?;
+
+    Ok(path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
 fn write_markdown_file(path: String, content: String) -> Result<(), String> {
     fs::write(path, content).map_err(|error| error.to_string())
 }
@@ -84,6 +120,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             read_directory_tree,
             read_markdown_file,
+            create_markdown_file,
             write_markdown_file
         ])
         .run(tauri::generate_context!())

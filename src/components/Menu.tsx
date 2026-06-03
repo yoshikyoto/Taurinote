@@ -13,6 +13,7 @@ import {
   useTree,
 } from "@mantine/core";
 import { FileIcon } from "@phosphor-icons/react/dist/csr/File";
+import { FilePlusIcon } from "@phosphor-icons/react/dist/csr/FilePlus";
 import { FolderIcon } from "@phosphor-icons/react/dist/csr/Folder";
 import { FolderOpenIcon } from "@phosphor-icons/react/dist/csr/FolderOpen";
 import { MoonIcon } from "@phosphor-icons/react/dist/csr/Moon";
@@ -45,11 +46,16 @@ type DirectoryTreeNodeProps = RenderTreeNodePayload & {
   };
   openMarkdownPath: string | null;
   onCloseRootDirectory: (path: string) => void;
+  onCreateMarkdownFile: (directoryPath: string) => void;
   onOpenMarkdownFile: (path: string) => void;
 };
 
 function readDirectoryTree(path: string) {
   return invoke<DirectoryNode>("read_directory_tree", { path });
+}
+
+function createMarkdownFile(directoryPath: string, fileName: string) {
+  return invoke<string>("create_markdown_file", { directoryPath, fileName });
 }
 
 async function readDirectoryTrees(paths: string[]) {
@@ -120,8 +126,10 @@ function DirectoryTreeNode({
   colors,
   openMarkdownPath,
   onCloseRootDirectory,
+  onCreateMarkdownFile,
   onOpenMarkdownFile,
 }: DirectoryTreeNodeProps) {
+  const [isHovered, setIsHovered] = useState(false);
   const isDirectory = node.nodeProps?.kind === "directory";
   const isRoot = level === 1;
   const isMarkdownFile =
@@ -146,6 +154,8 @@ function DirectoryTreeNode({
       aria-current={isOpenMarkdownFile ? "page" : undefined}
       bg={isOpenMarkdownFile ? colors.active : undefined}
       onClick={handleClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {isDirectory && expanded ? (
         <FolderOpenIcon aria-hidden color={colors.folderIcon} size={17} />
@@ -165,6 +175,28 @@ function DirectoryTreeNode({
       >
         {node.label}
       </Text>
+      {isDirectory && (
+        <ActionIcon
+          aria-label={`Add markdown file to ${node.label}`}
+          c={colors.textSubtle}
+          onClick={(event) => {
+            event.stopPropagation();
+            onCreateMarkdownFile(node.value);
+          }}
+          onKeyDown={(event) => event.stopPropagation()}
+          size={20}
+          style={{
+            opacity: isHovered ? 1 : 0,
+            pointerEvents: isHovered ? undefined : "none",
+            transition: "opacity 120ms ease",
+          }}
+          title={`Add markdown file to ${node.label}`}
+          type="button"
+          variant="subtle"
+        >
+          <FilePlusIcon aria-hidden size={14} weight="bold" />
+        </ActionIcon>
+      )}
       {isRoot && (
         <ActionIcon
           aria-label="Close directory"
@@ -239,6 +271,23 @@ function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
       const { trees, error: nextError } = await readDirectoryTrees(paths);
       setDirectoryTrees(trees);
       setError(nextError);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const refreshRootDirectoryForPath = useCallback(async (path: string) => {
+    setIsLoading(true);
+    try {
+      const nextTree = await readDirectoryTree(path);
+      setDirectoryTrees((currentTrees) =>
+        currentTrees.map((tree) =>
+          tree.path === nextTree.path ? nextTree : tree,
+        ),
+      );
+      setError(null);
+    } catch (readError) {
+      setError(String(readError));
     } finally {
       setIsLoading(false);
     }
@@ -339,6 +388,29 @@ function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
     }
   }
 
+  async function createMarkdownFileInDirectory(directoryPath: string) {
+    const fileName = window.prompt("File name");
+    if (fileName === null) return;
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const createdPath = await createMarkdownFile(directoryPath, fileName);
+      const rootTree = directoryTrees.find((tree) =>
+        isPathInDirectory(directoryPath, tree.path),
+      );
+      if (rootTree) {
+        await refreshRootDirectoryForPath(rootTree.path);
+      }
+      tree.expand(directoryPath);
+      onOpenMarkdownFile(createdPath);
+    } catch (createError) {
+      setError(String(createError));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   function closeRootDirectory(path: string) {
     if (openMarkdownPath && isPathInDirectory(openMarkdownPath, path)) {
       onOpenMarkdownFile(null);
@@ -390,6 +462,7 @@ function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
                 colors={menuColors}
                 openMarkdownPath={openMarkdownPath}
                 onCloseRootDirectory={closeRootDirectory}
+                onCreateMarkdownFile={createMarkdownFileInDirectory}
                 onOpenMarkdownFile={onOpenMarkdownFile}
               />
             )}
