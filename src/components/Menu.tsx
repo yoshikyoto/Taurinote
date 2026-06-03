@@ -102,6 +102,16 @@ function toExpandedDirectoryPaths(
     .map(([path]) => path);
 }
 
+function isPathInDirectory(path: string, directoryPath: string) {
+  const normalizedPath = path.replace(/\\/g, "/");
+  const normalizedDirectoryPath = directoryPath.replace(/\\/g, "/");
+
+  return (
+    normalizedPath === normalizedDirectoryPath ||
+    normalizedPath.startsWith(`${normalizedDirectoryPath}/`)
+  );
+}
+
 function DirectoryTreeNode({
   node,
   expanded,
@@ -178,7 +188,7 @@ function DirectoryTreeNode({
 
 type MenuProps = {
   openMarkdownPath: string | null;
-  onOpenMarkdownFile: (path: string) => void;
+  onOpenMarkdownFile: (path: string | null) => void;
 };
 
 function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
@@ -330,6 +340,10 @@ function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
   }
 
   function closeRootDirectory(path: string) {
+    if (openMarkdownPath && isPathInDirectory(openMarkdownPath, path)) {
+      onOpenMarkdownFile(null);
+    }
+
     setDirectoryTrees((currentTrees) =>
       currentTrees.filter((tree) => tree.path !== path),
     );

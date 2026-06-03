@@ -49,6 +49,7 @@ pnpm install
 
 - Mantine -- ライブラリ
 - Phosphor Icons
+  - https://phosphoricons.com/ アイコンの検索もここから
 - Milkdown -- Markdown エディタ
 
 ### Milkdown へのパッチ

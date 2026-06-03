@@ -1,12 +1,22 @@
 import { AppShell, useComputedColorScheme } from "@mantine/core";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 import MarkdownEditor from "./components/MarkdownEditor";
 import Menu from "./components/Menu";
+import {
+  loadOpenMarkdownPath,
+  saveOpenMarkdownPath,
+} from "./lib/repository/directoryStateRepository";
 
 function App() {
   const colorScheme = useComputedColorScheme("light");
-  const [openMarkdownPath, setOpenMarkdownPath] = useState<string | null>(null);
+  const [openMarkdownPath, setOpenMarkdownPath] = useState<string | null>(() =>
+    loadOpenMarkdownPath(),
+  );
+
+  useEffect(() => {
+    saveOpenMarkdownPath(openMarkdownPath);
+  }, [openMarkdownPath]);
 
   return (
     <AppShell navbar={{ width: 260, breakpoint: "xs" }} padding={0}>
