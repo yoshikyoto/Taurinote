@@ -108,6 +108,30 @@ fn create_markdown_file(directory_path: String, file_name: String) -> Result<Str
 }
 
 #[tauri::command]
+fn create_directory(directory_path: String, directory_name: String) -> Result<String, String> {
+    let directory_path = Path::new(&directory_path);
+    let metadata = fs::metadata(directory_path).map_err(|error| error.to_string())?;
+    if !metadata.is_dir() {
+        return Err("The selected path is not a directory.".to_string());
+    }
+
+    let trimmed_name = directory_name.trim();
+    if trimmed_name.is_empty()
+        || trimmed_name == "."
+        || trimmed_name == ".."
+        || trimmed_name.contains('/')
+        || trimmed_name.contains('\\')
+    {
+        return Err("Invalid directory name.".to_string());
+    }
+
+    let path = directory_path.join(trimmed_name);
+    fs::create_dir(&path).map_err(|error| error.to_string())?;
+
+    Ok(path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
 fn write_markdown_file(path: String, content: String) -> Result<(), String> {
     fs::write(path, content).map_err(|error| error.to_string())
 }
@@ -121,6 +145,7 @@ pub fn run() {
             read_directory_tree,
             read_markdown_file,
             create_markdown_file,
+            create_directory,
             write_markdown_file
         ])
         .run(tauri::generate_context!())
