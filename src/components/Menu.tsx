@@ -6,6 +6,7 @@ import {
   RenderTreeNodePayload,
   ScrollArea,
   Text,
+  TextInput,
   Tree,
   TreeNodeData,
   useComputedColorScheme,
@@ -22,7 +23,7 @@ import { SunIcon } from "@phosphor-icons/react/dist/csr/Sun";
 import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   loadExpandedDirectoryPaths,
   loadOpenDirectoryPaths,
@@ -37,6 +38,12 @@ type DirectoryNode = {
   children: DirectoryNode[];
 };
 
+// 作成中のファイル
+type PendingMarkdownFile = {
+  directoryPath: string;
+  name: string;
+};
+
 type DirectoryTreeNodeProps = RenderTreeNodePayload & {
   colors: {
     active: string;
@@ -45,10 +52,16 @@ type DirectoryTreeNodeProps = RenderTreeNodePayload & {
     textSubtle: string;
   };
   openMarkdownPath: string | null;
+  pendingFileName: string;
+  onCancelPendingMarkdownFile: () => void;
   onCloseRootDirectory: (path: string) => void;
-  onCreateMarkdownFile: (directoryPath: string) => void;
+  onCommitPendingMarkdownFile: () => void;
+  onPendingFileNameChange: (name: string) => void;
+  onStartCreatingMarkdownFile: (directoryPath: string) => void;
   onOpenMarkdownFile: (path: string) => void;
 };
+
+const PENDING_MARKDOWN_FILE_NODE_PREFIX = "pending-markdown-file:";
 
 function readDirectoryTree(path: string) {
   return invoke<DirectoryNode>("read_directory_tree", { path });
@@ -82,6 +95,39 @@ function toTreeNode(node: DirectoryNode): TreeNodeData {
     children:
       node.kind === "directory" ? node.children.map(toTreeNode) : undefined,
   };
+}
+
+function addPendingMarkdownFileNode(
+  nodes: TreeNodeData[],
+  pendingFile: PendingMarkdownFile | null,
+): TreeNodeData[] {
+  if (!pendingFile) return nodes;
+
+  return nodes.map((node) => {
+    if (node.value !== pendingFile.directoryPath) {
+      return {
+        ...node,
+        children: node.children
+          ? addPendingMarkdownFileNode(node.children, pendingFile)
+          : undefined,
+      };
+    }
+
+    return {
+      ...node,
+      children: [
+        {
+          label: "",
+          value: `${PENDING_MARKDOWN_FILE_NODE_PREFIX}${pendingFile.directoryPath}`,
+          nodeProps: {
+            directoryPath: pendingFile.directoryPath,
+            kind: "pendingFile",
+          },
+        },
+        ...(node.children ?? []),
+      ],
+    };
+  });
 }
 
 function collectDirectoryPaths(node: DirectoryNode): string[] {
@@ -125,17 +171,29 @@ function DirectoryTreeNode({
   level,
   colors,
   openMarkdownPath,
+  pendingFileName,
+  onCancelPendingMarkdownFile,
   onCloseRootDirectory,
-  onCreateMarkdownFile,
+  onCommitPendingMarkdownFile,
+  onPendingFileNameChange,
+  onStartCreatingMarkdownFile,
   onOpenMarkdownFile,
 }: DirectoryTreeNodeProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const pendingFileInputRef = useRef<HTMLInputElement>(null);
+  const isPendingFile = node.nodeProps?.kind === "pendingFile";
   const isDirectory = node.nodeProps?.kind === "directory";
   const isRoot = level === 1;
   const isMarkdownFile =
-    !isDirectory && /\.(md|markdown)$/i.test(node.value);
+    !isDirectory && !isPendingFile && /\.(md|markdown)$/i.test(node.value);
   const isOpenMarkdownFile =
     isMarkdownFile && node.value === openMarkdownPath;
+
+  useEffect(() => {
+    if (isPendingFile) {
+      pendingFileInputRef.current?.focus();
+    }
+  }, [isPendingFile]);
 
   function handleClick(event: React.MouseEvent) {
     elementProps.onClick(event);
@@ -143,6 +201,61 @@ function DirectoryTreeNode({
     if (isMarkdownFile) {
       onOpenMarkdownFile(node.value);
     }
+  }
+
+  if (isPendingFile) {
+    return (
+      <Group
+        gap={6}
+        wrap="nowrap"
+        title="New markdown file"
+        {...elementProps}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <FileIcon aria-hidden color={colors.fileIcon} size={16} />
+        <Group gap={2} miw={0} style={{ flex: 1 }} wrap="nowrap">
+          <TextInput
+            aria-label="New markdown file name"
+            autoComplete="off"
+            ref={pendingFileInputRef}
+            size="xs"
+            styles={{
+              input: {
+                color: "inherit",
+                fontSize: "0.82rem",
+                height: 20,
+                lineHeight: "1.3",
+                minHeight: 20,
+                padding: 0,
+              },
+              root: { flex: 1, minWidth: 0 },
+            }}
+            value={pendingFileName}
+            variant="unstyled"
+            onChange={(event) =>
+              onPendingFileNameChange(event.currentTarget.value)
+            }
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => {
+              event.stopPropagation();
+
+              if (event.key === "Enter") {
+                event.preventDefault();
+                onCommitPendingMarkdownFile();
+              }
+
+              if (event.key === "Escape") {
+                event.preventDefault();
+                onCancelPendingMarkdownFile();
+              }
+            }}
+          />
+          <Text c={colors.textSubtle} component="span" fz="0.82rem" lh={1.3}>
+            .md
+          </Text>
+        </Group>
+      </Group>
+    );
   }
 
   return (
@@ -181,7 +294,7 @@ function DirectoryTreeNode({
           c={colors.textSubtle}
           onClick={(event) => {
             event.stopPropagation();
-            onCreateMarkdownFile(node.value);
+            onStartCreatingMarkdownFile(node.value);
           }}
           onKeyDown={(event) => event.stopPropagation()}
           size={20}
@@ -231,12 +344,15 @@ function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
   );
   const tree = useTree({ initialExpandedState });
   const [directoryTrees, setDirectoryTrees] = useState<DirectoryNode[]>([]);
+  const [pendingFile, setPendingFile] = useState<PendingMarkdownFile | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const treeData = useMemo(
-    () => directoryTrees.map(toTreeNode),
-    [directoryTrees],
+    () => addPendingMarkdownFileNode(directoryTrees.map(toTreeNode), pendingFile),
+    [directoryTrees, pendingFile],
   );
   const isDarkMode = colorScheme === "dark";
   const menuColors = isDarkMode
@@ -388,21 +504,36 @@ function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
     }
   }
 
-  async function createMarkdownFileInDirectory(directoryPath: string) {
-    const fileName = window.prompt("File name");
-    if (fileName === null) return;
+  function startCreatingMarkdownFile(directoryPath: string) {
+    setPendingFile({ directoryPath, name: "" });
+    tree.expand(directoryPath);
+    setError(null);
+  }
+
+  async function commitPendingMarkdownFile() {
+    if (!pendingFile) return;
+
+    const fileName = pendingFile.name.trim();
+    if (fileName.length === 0) {
+      setError("ファイル名を入力してください。");
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
     try {
-      const createdPath = await createMarkdownFile(directoryPath, fileName);
+      const createdPath = await createMarkdownFile(
+        pendingFile.directoryPath,
+        fileName,
+      );
       const rootTree = directoryTrees.find((tree) =>
-        isPathInDirectory(directoryPath, tree.path),
+        isPathInDirectory(pendingFile.directoryPath, tree.path),
       );
       if (rootTree) {
         await refreshRootDirectoryForPath(rootTree.path);
       }
-      tree.expand(directoryPath);
+      tree.expand(pendingFile.directoryPath);
+      setPendingFile(null);
       onOpenMarkdownFile(createdPath);
     } catch (createError) {
       setError(String(createError));
@@ -414,6 +545,9 @@ function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
   function closeRootDirectory(path: string) {
     if (openMarkdownPath && isPathInDirectory(openMarkdownPath, path)) {
       onOpenMarkdownFile(null);
+    }
+    if (pendingFile && isPathInDirectory(pendingFile.directoryPath, path)) {
+      setPendingFile(null);
     }
 
     setDirectoryTrees((currentTrees) =>
@@ -461,8 +595,16 @@ function Menu({ openMarkdownPath, onOpenMarkdownFile }: MenuProps) {
                 {...payload}
                 colors={menuColors}
                 openMarkdownPath={openMarkdownPath}
+                pendingFileName={pendingFile?.name ?? ""}
+                onCancelPendingMarkdownFile={() => setPendingFile(null)}
                 onCloseRootDirectory={closeRootDirectory}
-                onCreateMarkdownFile={createMarkdownFileInDirectory}
+                onCommitPendingMarkdownFile={commitPendingMarkdownFile}
+                onPendingFileNameChange={(name) =>
+                  setPendingFile((currentFile) =>
+                    currentFile ? { ...currentFile, name } : currentFile,
+                  )
+                }
+                onStartCreatingMarkdownFile={startCreatingMarkdownFile}
                 onOpenMarkdownFile={onOpenMarkdownFile}
               />
             )}
